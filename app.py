@@ -47,6 +47,25 @@ def load_rag_system():
 # Load once
 retriever, llm = load_rag_system()
 
+#college name
+def is_identity_query(query):
+    query = query.lower()
+
+    identity_phrases = [
+        "which colleg is this",
+        "what is the college name",
+        "which college this is",
+        "which university is this",
+        "what is the name of university",
+        "which institute is this",
+        "what is the name of institute",
+        "which college is this",
+        "what is name of college?",
+        "where am i"
+    ]
+
+    return any(phrase in query for phrase in identity_phrases)
+
 #Greetings detection
 def is_greeting(query):
     greetings = [
@@ -106,8 +125,44 @@ def is_exit(query):
 
     return any(word in query for word in exit_words)
 
+#Context memory
+def get_conversation_context():
+
+    if "messages" not in st.session_state:
+        return ""
+
+    # Get last 5 exchanges
+    last_messages = st.session_state.messages[-5:]
+
+    conversation_text = ""
+
+    for msg in last_messages:
+        role = msg["role"]
+        content = msg["content"]
+        conversation_text += f"{role.upper()}: {content}\n"
+
+    return conversation_text
+
+
 # Query function
 def admission_assistant(user_query):
+
+
+    # -------------------------------
+    # IDENTITY HANDLER
+    # -------------------------------
+    if is_identity_query(user_query):
+        return """
+    This assistant provides admission-related information for:
+
+    🎓 Indian Institute of Technology (IIT)
+
+    You can ask about:
+    - Eligibility
+    - Fee structure
+    - Admission procedure
+    - Important dates
+    """
 
     # -------------------------------
     # GREETING HANDLER
@@ -172,24 +227,30 @@ def admission_assistant(user_query):
         [node.node.text for node in top_3_nodes]
     )
 
+    conversation_history = get_conversation_context()
+
     prompt = f"""
     You are an official IIT Admission Assistant.
 
     STRICT RULES:
-    - Answer ONLY using the provided context.
-    - If context does not contain relevant answer, say:
+    - Use only the provided retrieved context.
+    - Use conversation history only for understanding follow-up references.
+    - Do NOT hallucinate.
+    - If answer not available in retrieved context, say:
     "The requested information is not available in official IIT admission documents."
-    - Do NOT provide general knowledge.
-    - Do NOT answer about any other institution.
 
-    Context:
+    Conversation History:
+    {conversation_history}
+
+    Retrieved Context:
     {refined_context}
 
-    Question:
+    Current Question:
     {user_query}
 
     Answer:
     """
+
 
     response = llm.complete(prompt)
 
