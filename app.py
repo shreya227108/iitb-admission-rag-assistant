@@ -59,9 +59,6 @@ def is_greeting(query):
         "how are you",
         "hii",
         "yo",
-        "Bye",
-        "By,"
-        "See you"
     ]
 
     query = query.lower().strip()
@@ -84,12 +81,12 @@ def admission_assistant(user_query):
 
     I can help you with:
 
-    • Eligibility criteria  
-    • Fee structure
-    • scholarship documents
-    • Rules of college
-    • Important dates
-    • Admission procedure  
+    - Eligibility criteria
+    - Fee structure(PhD, UG)
+    - scholarship documents
+    - Rules of college
+    - Important dates
+    - Admission procedure  
 
     Please ask your admission-related question.
     """
@@ -131,9 +128,6 @@ def admission_assistant(user_query):
 
         Answer:
         """
-    
-    #testing only
-    print("Top score:", top_3_nodes[0].score)
 
     response = llm.complete(prompt)
 
@@ -165,13 +159,12 @@ with st.sidebar:
     - Similarity Threshold Protection
 
     🎓 Please Tell me what can I help you with:
-
-    • Eligibility criteria  
-    • Fee structure(PhD, UG)
-    • scholarship documents
-    • Rules of college
-    • Important dates  
-    • Admission procedure  
+    - Eligibility criteria
+    - Fee structure(PhD, UG)
+    - scholarship documents
+    - Rules of college
+    - Important dates
+    - Admission procedure   
     """)
 
     if st.button("🔄 Clear Chat"):
@@ -208,6 +201,7 @@ if prompt := st.chat_input("Ask your question..."):
     st.session_state.messages.append(
         {"role": "assistant", "content": response}
     )
+
 #--------------questions you can ask the AI-----------------------
 #what is the eligibility criteria?
 #What is the fee structure ?
