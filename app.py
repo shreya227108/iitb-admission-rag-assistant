@@ -54,7 +54,7 @@ def is_identity_query(query):
     identity_phrases = [
         "which colleg is this",
         "what is the college name",
-        "which college this is",
+        "which college this is"
         "which university is this",
         "what is the name of university",
         "which institute is this",
@@ -125,6 +125,24 @@ def is_exit(query):
 
     return any(word in query for word in exit_words)
 
+#following questions
+# Follow-up detection (for vague continuation queries)
+def is_followup_query(query):
+    followup_phrases = [
+        "tell me more",
+        "explain more",
+        "more details",
+        "what about that",
+        "and what about",
+        "and then",
+        "continue",
+        "more information"
+    ]
+
+    query = query.lower().strip()
+
+    return any(query == phrase or phrase in query for phrase in followup_phrases)
+
 #Context memory
 def get_conversation_context():
 
@@ -142,6 +160,21 @@ def get_conversation_context():
         conversation_text += f"{role.upper()}: {content}\n"
 
     return conversation_text
+
+#fallback logic
+# Get last meaningful user topic
+def get_last_user_topic():
+    if "messages" not in st.session_state:
+        return ""
+
+    user_messages = [msg["content"] for msg in st.session_state.messages if msg["role"] == "user"]
+
+    # Need at least 2 user messages
+    if len(user_messages) < 2:
+        return ""
+
+    # Return second last user message (previous topic)
+    return user_messages[-2]
 
 
 # Query function
@@ -208,7 +241,16 @@ def admission_assistant(user_query):
     # RAG RETRIEVAL
     # -------------------------------
 
-    retrieved_nodes = retriever.retrieve(user_query)
+    conversation_history = get_conversation_context()
+
+    # If follow-up vague query → expand with last topic
+    if is_followup_query(user_query):
+        last_topic = get_last_user_topic()
+        retrieval_query = f"{last_topic}\nFollow up: {user_query}"
+    else:
+        retrieval_query = f"{conversation_history}\nCurrent Question: {user_query}"
+
+    retrieved_nodes = retriever.retrieve(retrieval_query)
 
     if not retrieved_nodes:
         return "❌ The requested information is not available in official IIT admission documents."
@@ -226,8 +268,6 @@ def admission_assistant(user_query):
     refined_context = "\n\n".join(
         [node.node.text for node in top_3_nodes]
     )
-
-    conversation_history = get_conversation_context()
 
     prompt = f"""
     You are an official IIT Admission Assistant.
