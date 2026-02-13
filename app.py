@@ -69,36 +69,94 @@ def is_greeting(query):
 
     return False
 
+#small gratitudes
+def is_small_talk(query):
+    small_talk_phrases = [
+        "ok",
+        "okay",
+        "ok that's great",
+        "great",
+        "nice",
+        "cool",
+        "thanks",
+        "thank you",
+        "alright",
+        "got it"
+    ]
+
+    query = query.lower().strip()
+
+    return any(phrase in query for phrase in small_talk_phrases)
+
+#Exit greetings
+def is_exit(query):
+    exit_words = [
+        "bye",
+        "goodbye",
+        "exit",
+        "see you",
+        "thanks bye",
+        "quit",
+        "ok thanks",
+        "Thanks",
+        "That's Great"
+    ]
+
+    query = query.lower().strip()
+
+    return any(word in query for word in exit_words)
+
 # Query function
 def admission_assistant(user_query):
 
     # -------------------------------
-    # GREETING HANDLER (No RAG)
+    # GREETING HANDLER
     # -------------------------------
     if is_greeting(user_query):
         return """
     👋 Hello! Welcome to the IIT Admission Q&A Assistant.
 
-    I can help you with:
+    I can assist you with:
 
-    - Eligibility criteria
-    - Fee structure(PhD, UG)
-    - scholarship documents
-    - Rules of college
-    - Important dates
+    - Eligibility criteria  
+    - Fee structure  
+    - Required documents  
+    - Important dates  
     - Admission procedure  
 
     Please ask your admission-related question.
     """
 
     # -------------------------------
-    # RAG FLOW FOR QUESTIONS
+    # SMALL TALK HANDLER
+    # -------------------------------
+    if is_small_talk(user_query):
+        return """
+    😊 You're welcome! 
+
+    If you have any questions about IIT admissions, feel free to ask.
+    """
+
+    # -------------------------------
+    # EXIT HANDLER
+    # -------------------------------
+    if is_exit(user_query):
+        return """
+    👋 Thank you for using the IIT Admission Q&A Assistant.
+
+    If you need assistance again, feel free to return.
+
+    Have a great day!
+    """
+
+    # -------------------------------
+    # RAG RETRIEVAL
     # -------------------------------
 
     retrieved_nodes = retriever.retrieve(user_query)
 
     if not retrieved_nodes:
-        return "❌ No relevant information found in official admission documents."
+        return "❌ The requested information is not available in official IIT admission documents."
 
     top_3_nodes = sorted(
         retrieved_nodes,
@@ -106,30 +164,38 @@ def admission_assistant(user_query):
         reverse=True
     )[:3]
 
-    # Similarity safety check
-    if top_3_nodes[0].score is None or top_3_nodes[0].score < 0.3:
-        return "❌ Information not available in official admission documents."
+    # 🔐 Strong similarity safety
+    if top_3_nodes[0].score is not None and top_3_nodes[0].score < 0.25:
+        return "❌ The requested information is not available in official IIT admission documents."
 
     refined_context = "\n\n".join(
         [node.node.text for node in top_3_nodes]
     )
 
     prompt = f"""
-        You are an official IIT Admission Assistant.
+    You are an official IIT Admission Assistant.
 
-        Use ONLY the provided context.
-        Answer in professional bullet points.
+    STRICT RULES:
+    - Answer ONLY using the provided context.
+    - If context does not contain relevant answer, say:
+    "The requested information is not available in official IIT admission documents."
+    - Do NOT provide general knowledge.
+    - Do NOT answer about any other institution.
 
-        Context:
-        {refined_context}
+    Context:
+    {refined_context}
 
-        Question:
-        {user_query}
+    Question:
+    {user_query}
 
-        Answer:
-        """
+    Answer:
+    """
 
     response = llm.complete(prompt)
+
+    # 🔐 Extra safety: prevent LLM from leaking external info
+    if "WIT" in response.text or "MIT" in response.text:
+        return "❌ The requested information is not available in official IIT admission documents."
 
     return response.text
 
