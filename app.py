@@ -278,7 +278,7 @@ def admission_assistant(user_query):
     else:
         retrieval_query = f"{conversation_history}\nCurrent Question: {user_query}"
 
-    retrieved_nodes = retriever.retrieve(retrieval_query)
+    retrieved_nodes = retriever.retrieve(user_query)
 
     if not retrieved_nodes:
         return "❌ The requested information is not available in official IIT admission documents."
@@ -290,7 +290,7 @@ def admission_assistant(user_query):
     )[:3]
 
     # 🔐 Strong similarity safety
-    if top_3_nodes[0].score is not None and top_3_nodes[0].score < 0.25:
+    if top_3_nodes[0].score is not None and top_3_nodes[0].score < 0.15:
         return "❌ The requested information is not available in official IIT admission documents."
 
     refined_context = "\n\n".join(
@@ -331,7 +331,7 @@ def admission_assistant(user_query):
 
 #Cache Query Results
 @st.cache_data(show_spinner=False)
-def cached_query(user_query):
+def cached_query(user_query, version="v2"):
     # Normalize query for stable caching
     normalized_query = user_query.strip().lower()
     return admission_assistant(normalized_query)
@@ -391,7 +391,7 @@ if prompt := st.chat_input("Ask your question..."):
 
     # Generate assistant response
     with st.chat_message("assistant"):
-        response = cached_query(prompt)
+        response = cached_query(prompt, version="v2")
         st.markdown(response)
 
     # Save assistant message
