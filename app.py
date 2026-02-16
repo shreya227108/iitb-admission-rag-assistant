@@ -190,7 +190,7 @@ def admission_assistant(user_query):
         return """
     This assistant provides admission-related information for:
 
-    🎓 Indian Institute of Technology (IIT)
+    🎓 Indian Institute of Technology Bombay (IIT)
 
     You can ask about:
     - Eligibility
@@ -394,3 +394,4 @@ if prompt := st.chat_input("Ask your question..."):
 #What documents are required for the scholarship?
 #what are the important dates?
 #Hello or any other greetings
+
