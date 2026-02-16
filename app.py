@@ -113,21 +113,29 @@ def get_greeting_word(query):
 #small gratitudes
 def is_small_talk(query):
     small_talk_phrases = [
-        "ok",
-        "okay",
-        "ok that's great",
-        "great",
-        "nice",
-        "cool",
-        "thanks",
-        "thank you",
-        "alright",
-        "got it"
+        "ok", "okay", "great", "nice", "cool",
+        "thanks", "thank you", "alright", "got it"
     ]
 
-    query = query.lower().strip()
+    query_clean = query.lower().strip()
 
-    return any(phrase in query for phrase in small_talk_phrases)
+    # If question mark present → NEVER small talk
+    if "?" in query_clean:
+        return False
+
+    # If question words present → NOT small talk
+    question_words = ["what", "how", "when", "where", "which", "who", "eligibility", "fee", "admission"]
+
+    if any(word in query_clean for word in question_words):
+        return False
+
+    words = query_clean.split()
+
+    if len(words) <= 3 and query_clean in small_talk_phrases:
+        return True
+
+    return False
+
 
 #Exit greetings
 def is_exit(query):
