@@ -1,3 +1,4 @@
+
 import hashlib
 import streamlit as st
 import os
@@ -49,6 +50,19 @@ def load_rag_system():
 # Load once
 retriever, llm = load_rag_system()
 
+#auto time detector
+from datetime import datetime
+
+def get_time_based_greeting():
+    hour = datetime.now().hour
+
+    if hour < 12:
+        return "Good morning"
+    elif hour < 17:
+        return "Good afternoon"
+    else:
+        return "Good evening"
+
 #college name
 def is_identity_query(query):
     query = query.lower()
@@ -69,27 +83,32 @@ def is_identity_query(query):
     return any(phrase in query for phrase in identity_phrases)
 
 #Greetings detection
-def detect_greeting(query):
-    query_clean = query.lower().strip()
-
-    greetings_map = {
-        "hi": "Hi 👋",
-        "hello": "Hello 👋",
-        "hey": "Hey 👋",
-        "good morning": "Good Morning ☀",
-        "good afternoon": "Good Afternoon 🌤",
-        "good evening": "Good Evening 🌙",
-        "hii": "Hi 👋",
-        "yo": "Yo 👋"
+def get_greeting_word(query):
+    greeting_map = {
+        "hi": "Hi",
+        "hello": "Hello",
+        "hey": "Hey",
+        "hii": "Hi",
+        "yo": "Hey",
+        "good morning": "Good morning",
+        "good afternoon": "Good afternoon",
+        "good evening": "Good evening"
     }
 
-    # Only treat as greeting if short (<= 3 words)
-    if len(query_clean.split()) <= 3:
-        for key, response in greetings_map.items():
-            if key in query_clean:
-                return response
+    query_clean = query.lower().strip()
+    words = query_clean.split()
+
+    # Only treat as greeting if short message
+    if len(words) <= 3:
+        if query_clean in greeting_map:
+            return greeting_map[query_clean]
+
+        for key in greeting_map:
+            if key in words:
+                return greeting_map[key]
 
     return None
+
 
 #small gratitudes
 def is_small_talk(query):
@@ -203,48 +222,27 @@ def admission_assistant(user_query):
     # -------------------------------
     # GREETING HANDLER
     # -------------------------------
-    greeting_response = detect_greeting(user_query)
-    
-    if greeting_response:
+    greeting_word = get_greeting_word(user_query)
+
+    if greeting_word:
         return f"""
-    {greeting_response}
-    
-    Welcome to the IIT Admission Q&A Assistant 🎓
-    
-    I can assist you with:
-    
-    • Eligibility criteria  
-    • Fee structure  
-    • Required documents  
-    • Important dates  
-    • Admission procedure  
-    
-    Please ask your admission-related question.
+    👋 {greeting_word}! Welcome to the IIT Bombay Admission Q&A Assistant.
+    ...
+    """
+
+    # If user just writes something very small like "hi"
+    if user_query.lower().strip() in ["hi", "hello"]:
+        time_greet = get_time_based_greeting()
+        return f"""
+    👋 {time_greet}! Welcome to the IIT Bombay Admission Q&A Assistant.
+    ...
     """
 
     # -------------------------------
     # SMALL TALK HANDLER
     # -------------------------------
-    def is_small_talk(query):
-        small_talk_phrases = [
-            "ok",
-            "okay",
-            "great",
-            "nice",
-            "cool",
-            "thanks",
-            "thank you",
-            "alright",
-            "got it"
-        ]
-
-        query_clean = query.lower().strip()
-
-        # Only treat as small talk if message is short (<=3 words)
-        if len(query_clean.split()) <= 3:
-            return query_clean in small_talk_phrases
-
-        return False
+    if is_small_talk(user_query):
+        return "😊 Glad to help! Let me know if you have any admission-related questions."
 
 
     # -------------------------------
@@ -272,7 +270,7 @@ def admission_assistant(user_query):
     else:
         retrieval_query = f"{conversation_history}\nCurrent Question: {user_query}"
 
-    retrieved_nodes = retriever.retrieve(user_query)
+    retrieved_nodes = retriever.retrieve(retrieval_query)
 
     if not retrieved_nodes:
         return "❌ The requested information is not available in official IIT admission documents."
@@ -399,6 +397,3 @@ if prompt := st.chat_input("Ask your question..."):
 #What documents are required for the scholarship?
 #what are the important dates?
 #Hello or any other greetings
-
-
-
