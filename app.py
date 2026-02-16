@@ -69,26 +69,27 @@ def is_identity_query(query):
     return any(phrase in query for phrase in identity_phrases)
 
 #Greetings detection
-def is_greeting(query):
-    greetings = [
-        "hi",
-        "hello",
-        "hey",
-        "good morning",
-        "good afternoon",
-        "good evening",
-        "how are you",
-        "hii",
-        "yo",
-    ]
+def detect_greeting(query):
+    query_clean = query.lower().strip()
 
-    query = query.lower().strip()
+    greetings_map = {
+        "hi": "Hi 👋",
+        "hello": "Hello 👋",
+        "hey": "Hey 👋",
+        "good morning": "Good Morning ☀",
+        "good afternoon": "Good Afternoon 🌤",
+        "good evening": "Good Evening 🌙",
+        "hii": "Hi 👋",
+        "yo": "Yo 👋"
+    }
 
-    # Only treat as greeting if short message (<= 3 words)
-    if len(query.split()) <= 3:
-        return query in greetings
+    # Only treat as greeting if short (<= 3 words)
+    if len(query_clean.split()) <= 3:
+        for key, response in greetings_map.items():
+            if key in query_clean:
+                return response
 
-    return False
+    return None
 
 #small gratitudes
 def is_small_talk(query):
@@ -202,18 +203,22 @@ def admission_assistant(user_query):
     # -------------------------------
     # GREETING HANDLER
     # -------------------------------
-    if is_greeting(user_query):
-        return """
-    👋 Hello! Welcome to the IIT Admission Q&A Assistant.
-
+    greeting_response = detect_greeting(user_query)
+    
+    if greeting_response:
+        return f"""
+    {greeting_response}
+    
+    Welcome to the IIT Admission Q&A Assistant 🎓
+    
     I can assist you with:
-
-    - Eligibility criteria  
-    - Fee structure  
-    - Required documents  
-    - Important dates  
-    - Admission procedure  
-
+    
+    • Eligibility criteria  
+    • Fee structure  
+    • Required documents  
+    • Important dates  
+    • Admission procedure  
+    
     Please ask your admission-related question.
     """
 
@@ -394,5 +399,6 @@ if prompt := st.chat_input("Ask your question..."):
 #What documents are required for the scholarship?
 #what are the important dates?
 #Hello or any other greetings
+
 
 
