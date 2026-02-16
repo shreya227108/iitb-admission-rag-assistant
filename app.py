@@ -327,7 +327,7 @@ def cached_query(user_query):
 
 # Streamlit UI
 st.set_page_config(page_title="Admission Assistant")
-st.title("🎓 IIT Admission Q&A Assistant")
+st.title("🎓 IIT Bombay Admission Q&A Assistant")
 
 # ------------------------------
 # SIDEBAR
@@ -394,4 +394,5 @@ if prompt := st.chat_input("Ask your question..."):
 #What documents are required for the scholarship?
 #what are the important dates?
 #Hello or any other greetings
+
 
