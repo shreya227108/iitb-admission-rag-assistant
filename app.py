@@ -1,3 +1,4 @@
+import hashlib
 import streamlit as st
 import os
 from dotenv import load_dotenv
@@ -30,7 +31,8 @@ def load_rag_system():
         model="llama-3.1-8b-instant",
         api_key=groq_api_key,
         temperature=0.0,
-        max_tokens=1000  # context limit declaration
+        max_tokens=1000,  # context limit declaration
+        top_p=1.0
     )
 
     Settings.embed_model = embed_model
@@ -218,12 +220,27 @@ def admission_assistant(user_query):
     # -------------------------------
     # SMALL TALK HANDLER
     # -------------------------------
-    if is_small_talk(user_query):
-        return """
-    😊 You're welcome! 
+    def is_small_talk(query):
+        small_talk_phrases = [
+            "ok",
+            "okay",
+            "great",
+            "nice",
+            "cool",
+            "thanks",
+            "thank you",
+            "alright",
+            "got it"
+        ]
 
-    If you have any questions about IIT admissions, feel free to ask.
-    """
+        query_clean = query.lower().strip()
+
+        # Only treat as small talk if message is short (<=3 words)
+        if len(query_clean.split()) <= 3:
+            return query_clean in small_talk_phrases
+
+        return False
+
 
     # -------------------------------
     # EXIT HANDLER
@@ -250,7 +267,7 @@ def admission_assistant(user_query):
     else:
         retrieval_query = f"{conversation_history}\nCurrent Question: {user_query}"
 
-    retrieved_nodes = retriever.retrieve(retrieval_query)
+    retrieved_nodes = retriever.retrieve(user_query)
 
     if not retrieved_nodes:
         return "❌ The requested information is not available in official IIT admission documents."
@@ -304,7 +321,9 @@ def admission_assistant(user_query):
 #Cache Query Results
 @st.cache_data(show_spinner=False)
 def cached_query(user_query):
-    return admission_assistant(user_query)
+    # Normalize query for stable caching
+    normalized_query = user_query.strip().lower()
+    return admission_assistant(normalized_query)
 
 # Streamlit UI
 st.set_page_config(page_title="Admission Assistant")
